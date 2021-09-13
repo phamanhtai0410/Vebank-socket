@@ -5,7 +5,7 @@ RUN apt-get upgrade -y
 #RUN apt-get -y install docker-compose
 
 # Create app directory
-RUN mkdir -p /webapps/the-cua-tui-service
+RUN mkdir -p /webapps/rinz-service
 WORKDIR /webapps/rinz-service
 
 # Install yarn
@@ -16,7 +16,7 @@ WORKDIR /webapps/rinz-service
 # ADD package.json /sources/api/package.json
 COPY package.json /webapps/rinz-service
 COPY . /webapps/rinz-service
-RUN yarn
+RUN yarn install
 
 # COPY . /sources/web
 
