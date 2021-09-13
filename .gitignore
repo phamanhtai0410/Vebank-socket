@@ -1,0 +1,7 @@
+.idea
+*.pyc
+.vscode
+venv
+.env
+node_modules
+
