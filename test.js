@@ -19,7 +19,7 @@ socket.on("connect", () => {
         socket.emit("sendRoom", {
             'room': '123456',
             'payload': {
-                'a': '1'
+                'a': '4kdys'
             }
         }, (response2) => {
             console.log(response2); // ok

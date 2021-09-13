@@ -1,4 +1,4 @@
-const blackList = ['black']
+const blackList = require('../constants/blackList')
 const bluebird = require('bluebird')
 
 const isValidMessage = text => new Promise(async resolve => {
