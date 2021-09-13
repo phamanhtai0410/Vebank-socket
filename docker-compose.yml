@@ -10,7 +10,7 @@ services:
       - ./:/webapps/rinz-service
       - /var/log/apps/:/var/log/apps/
     ports:
-      - "5006-5008:3000"
+      - "4006-4008:3000"
     #env_file:
     # - ./.env
     networks:
