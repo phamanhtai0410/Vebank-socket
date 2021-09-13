@@ -16,7 +16,7 @@ WORKDIR /webapps/rinz-service
 # ADD package.json /sources/api/package.json
 COPY package.json /webapps/rinz-service
 COPY . /webapps/rinz-service
-RUN yarn install
+RUN yarn
 
 # COPY . /sources/web
 

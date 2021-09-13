@@ -4,19 +4,12 @@ services:
   backend:
     image: rinz-websocket
 #    container_name: rinz-websocket-container
-    build: ./
-    restart: on-failure
-    volumes:
-      - ./:/webapps/rinz-service
-      - /var/log/apps/:/var/log/apps/
+    build: .
+    restart: always
     ports:
       - "4006-4008:3000"
-    #env_file:
-    # - ./.env
     networks:
       - rinz
-#    scale: 3
-
 networks:
   rinz:
     external: true
