@@ -1,5 +1,5 @@
 const io = require("socket.io-client");
-const host = 'http://localhost:5007'
+const host = 'http://localhost:3000'
 let socket = io(host, {
     forceNew: true,
     transports: ["websocket"],
@@ -19,7 +19,7 @@ socket.on("connect", () => {
         socket.emit("sendRoom", {
             'room': '123456',
             'payload': {
-                'a': 1
+                'a': '1'
             }
         }, (response2) => {
             console.log(response2); // ok

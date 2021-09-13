@@ -1,3 +1,5 @@
+const {isValidMessage} = require("../../helpers/valid");
+const {inRoom} = require("../../helpers/rules");
 const onSubscribe = (data, socket, io, cb = null) => {
     try {
         const {room} = data;
@@ -53,21 +55,47 @@ const unSubscribe = (data, socket, io, cb = null) => {
     }
 }
 
-const onEmit = (data, socket, io, cb = null) => {
+const onEmit = async (data, socket, io, cb = null) => {
     try {
         const {room, payload} = data;
+        console.log(room, payload)
         if (room) {
-            io.to(room).emit('message', {
-                owner: socket.user,
-                payload: payload
-            })
-            if (cb) {
-                cb({
-                    'error_code': '',
-                    'status': 1,
-                    'data': {},
-                    'msg': 'success'
-                })
+            const inR = await inRoom(socket, room)
+            if(inR) {
+                let text = await JSON.stringify(payload)
+                const isValid = await isValidMessage(text)
+                if (isValid) {
+                    io.to(room).emit('message', {
+                        owner: socket.user,
+                        payload: payload
+                    })
+                    if (cb) {
+                        cb({
+                            'error_code': '',
+                            'status': 1,
+                            'data': {},
+                            'msg': 'success'
+                        })
+                    }
+                } else {
+                    if (cb) {
+                        cb({
+                            'error_code': 'INVALID_MESSAGE',
+                            'status': 0,
+                            'data': {},
+                            'msg': 'Invalid message'
+                        })
+                    }
+                }
+            } else {
+                if (cb) {
+                    cb({
+                        'error_code': 'NOT_IN_ROOM',
+                        'status': 0,
+                        'data': {},
+                        'msg': 'not in this room'
+                    })
+                }
             }
         }
 
