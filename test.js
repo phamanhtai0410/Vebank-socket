@@ -19,7 +19,12 @@ socket.on("connect", () => {
         socket.emit("sendRoom", {
             'room': '123456',
             'payload': {
-                'a': '4kdys'
+                'content': '4kdys',
+                'type': 'live_chat',
+                'user': {
+                    'user_name': 'Admin',
+                    'user_avatar': ''
+                }
             }
         }, (response2) => {
             console.log(response2); // ok

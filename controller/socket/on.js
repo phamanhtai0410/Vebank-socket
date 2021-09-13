@@ -61,10 +61,20 @@ const onEmit = async (data, socket, io, cb = null) => {
         console.log(room, payload)
         if (room) {
             const inR = await inRoom(socket, room)
-            if(inR) {
-                let text = await JSON.stringify(payload)
-                const isValid = await isValidMessage(text)
+            if (inR) {
+                const isValid = await isValidMessage(payload)
                 if (isValid) {
+                    if (!payload?.user?.user_name) {
+                        if (cb) {
+                            cb({
+                                'error_code': 'INVALID_USER',
+                                'status': 0,
+                                'data': {},
+                                'msg': 'Invalid user'
+                            })
+                        }
+                        return null;
+                    }
                     io.to(room).emit('message', {
                         owner: socket.user,
                         payload: payload
