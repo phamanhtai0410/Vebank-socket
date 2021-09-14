@@ -1,5 +1,5 @@
 const io = require("socket.io-client");
-const host = 'http://localhost:3000'
+const host = 'https://socket-staging.rinznetwork.com/'
 let socket = io(host, {
     forceNew: true,
     transports: ["websocket"],

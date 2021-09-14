@@ -39,7 +39,7 @@ module.exports = function initSocket(server) {
         console.log('a user connected', socket.id);
         socket.on('subscribe', (args, cb) => onHandler.onSubscribe(args, socket, io, cb))
         socket.on('unsubscribe', (args, cb) => onHandler.unSubscribe(args, socket, io, cb))
-        socket.on('sendRoom', (args, cb) => onHandler.onEmit(args, socket, io, cb))
+        // socket.on('sendRoom', (args, cb) => onHandler.onEmit(args, socket, io, cb))
     });
 
     return io
