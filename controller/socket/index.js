@@ -25,7 +25,7 @@ module.exports = function initSocket(server) {
         if (user) {
             const {payload} = user;
             if (payload.id) {
-                socket.user = payload.id
+                socket.user = payload
                 socket.join(`user_${payload.id}`)
                 return next()
             }
@@ -39,8 +39,16 @@ module.exports = function initSocket(server) {
         console.log('a user connected', socket.id);
         socket.on('subscribe', (args, cb) => onHandler.onSubscribe(args, socket, io, cb))
         socket.on('unsubscribe', (args, cb) => onHandler.unSubscribe(args, socket, io, cb))
+        socket.on('disconnecting', (reason) => {
+            // ...
+            console.error('disconnect', reason,Object.keys(socket.rooms), socket.rooms)
+            try {
+                socket.rooms.forEach(room=>onHandler.leftRoom(socket, room, io))
+            }catch (e) {
+                console.error(e)
+            }
+        });
         // socket.on('sendRoom', (args, cb) => onHandler.onEmit(args, socket, io, cb))
     });
-
     return io
 }

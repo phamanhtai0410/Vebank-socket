@@ -1,5 +1,5 @@
 const io = require("socket.io-client");
-const host = 'https://socket-staging.rinznetwork.com/'
+const host = 'http://localhost:3000'
 let socket = io(host, {
     forceNew: true,
     transports: ["websocket"],
@@ -12,27 +12,22 @@ let socket = io(host, {
 socket.on("connect", () => {
     console.log('connected', socket.id, host);
     socket.emit("subscribe", {
-        'room': '123456',
-        'type': 'post'
+        'room': '607ceddd33536e61833b5c43'
     }, (response) => {
         console.log(response); // ok
-        socket.emit("sendRoom", {
-            'room': '123456',
-            'payload': {
-                'content': '4kdys',
-                'type': 'live_chat',
-                'user': {
-                    'user_name': 'Admin',
-                    'user_avatar': ''
-                }
-            }
-        }, (response2) => {
-            console.log(response2); // ok
-        })
     })
 
 });
+socket.on("joined", (data) => {
+    console.log('joined', data);
+});
+socket.on("left", (data) => {
+    console.log('left', data);
+});
 
+socket.on("live_chat", (data) => {
+    console.log('live_chat', data);
+});
 socket.on("message", (data) => {
     console.log('message', data);
 });
