@@ -1,20 +1,36 @@
 const {isValidMessage} = require("../../helpers/valid");
 const {inRoom} = require("../../helpers/rules");
-const {incrRedisCluster} = require("../../extentions/redisCluster");
+const {incrRedisCluster, hSetRedis, getRedis} = require("../../extentions/redisCluster");
 const getKeyCountClientOfRoom = room => `counters:rooms:${room}`
+const getKeyRecordUser = room => `recorders:rooms:${room}`
+
+const recordUser = (room, user) => {
+    try {
+        const key = getKeyRecordUser(room)
+        return hSetRedis(key, user.id, user)
+    } catch (e) {
+
+    }
+}
 
 const joinRoom = async (socket, room) => {
     try {
         const key = getKeyCountClientOfRoom(room)
         socket.join(room)
-        const countClients = await incrRedisCluster(key, 1)
-        socket.to(room).emit('joined', {
-            payload: {
-                total_views: countClients,
-                member: socket.user
-            },
-            user_id: -777
-        })
+        const has = await recordUser(room, socket.user)
+        let countClients = 0
+        if(has===1) {
+            const countClients = await incrRedisCluster(key, 1)
+            socket.to(room).emit('joined', {
+                payload: {
+                    total_views: countClients,
+                    member: socket.user
+                },
+                user_id: -777
+            })
+        } else {
+            countClients = await getRedis(key)
+        }
         return countClients
     } catch (e) {
         console.error(e)
@@ -24,11 +40,12 @@ const joinRoom = async (socket, room) => {
 const leftRoom = async (socket, room, io) => {
     try {
         const key = getKeyCountClientOfRoom(room)
-        if(socket) {
+        if (socket) {
             socket.leave(room)
         }
         const countClients = await incrRedisCluster(key, -1)
-        if(io) {
+
+        if (io && countClients > 0) {
             io.to(room).emit('left', {
                 payload: {
                     total_views: countClients,
