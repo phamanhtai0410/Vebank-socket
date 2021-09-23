@@ -22,27 +22,25 @@ module.exports = function (io) {
                 type = "public",
                 users = []
             } = body;
+            if(!isOID(room)){
+                return res.status(200).send({
+                    'error_code': 'ERROR_INVALID',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'room is invalid',
+                    'time': getTimeCurrentUTC(),
+                    'version': 'v1'
+                })
+            }
             if (type === 'public') {
-                if (isOID(room)) {
-                    io.to(room).emit(event, {
-                        'payload': payload,
-                        'room': room,
-                        'owner': owner,
+                io.to(room).emit(event, {
+                    'payload': payload,
+                    'room': room,
+                    'owner': owner,
 
-                        'time': getTimeCurrentUTC(),
-                        'version': 'v1'
-                    })
-                } else {
-                    return res.status(200).send({
-                        'error_code': 'ERROR_INVALID',
-                        'status': 0,
-                        'data': {},
-                        'msg': 'room is invalid',
-                        'time': getTimeCurrentUTC(),
-                        'version': 'v1'
-                    })
-                }
-
+                    'time': getTimeCurrentUTC(),
+                    'version': 'v1'
+                })
                 return res.status(200).send({
                     'error_code': '',
                     'status': 1,
