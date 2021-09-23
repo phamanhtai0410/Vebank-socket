@@ -1,4 +1,4 @@
-const {isValidMessage} = require("../../helpers/valid");
+const {isValidMessage, isOID} = require("../../helpers/valid");
 const {inRoom} = require("../../helpers/rules");
 const {
     incrRedisCluster,
@@ -9,9 +9,11 @@ const {
     lPushArray
 } = require("../../extentions/redisCluster");
 const {getTimeCurrentUTC} = require("../../helpers/datetime");
+
 const getKeyCountClientOfRoom = room => `counters:rooms:${room}`
 const getKeyRecordUser = room => `recorders:rooms:${room}`
 const getKeyLogRoom = room => `logs:rooms:${room}`
+
 const logRoom = async (room, event, payload) => {
     try {
         const key = getKeyLogRoom(room)
@@ -110,18 +112,31 @@ const onSubscribe = async (data, socket, io, cb = null) => {
     try {
         const {room} = data;
         if (room) {
-            const  countClients = await joinRoom(socket, room)
-            if (cb) {
-                cb({
-                    'error_code': '',
-                    'status': 1,
-                    'data': {
-                        room:room,
-                        total_views: countClients
-                    },
-                    'msg': 'success'
-                })
+            console.log('isOID', isOID(room))
+            if (isOID(room)) {
+                const countClients = await joinRoom(socket, room)
+                if (cb) {
+                    cb({
+                        'error_code': '',
+                        'status': 1,
+                        'data': {
+                            room: room,
+                            total_views: countClients
+                        },
+                        'msg': 'success'
+                    })
+                }
+            } else {
+                if (cb) {
+                    cb({
+                        'error_code': 'ERROR_INVALID_ROOM',
+                        'status': 0,
+                        'data': {},
+                        'msg': 'room is invalid'
+                    })
+                }
             }
+
         }
 
     } catch (e) {
@@ -140,17 +155,27 @@ const unSubscribe = (data, socket, io, cb = null) => {
     try {
         const {room} = data;
         if (room) {
-            leftRoom(socket, room)
-            if (cb) {
-                cb({
-                    'error_code': '',
-                    'status': 1,
-                    'data': {},
-                    'msg': 'success'
-                })
+            if (isOID(room)) {
+                leftRoom(socket, room)
+                if (cb) {
+                    cb({
+                        'error_code': '',
+                        'status': 1,
+                        'data': {},
+                        'msg': 'success'
+                    })
+                }
+            } else {
+                if (cb) {
+                    cb({
+                        'error_code': 'ERROR_INVALID_ROOM',
+                        'status': 0,
+                        'data': {},
+                        'msg': 'room is invalid'
+                    })
+                }
             }
         }
-
     } catch (e) {
         console.error(e)
         if (cb) {
@@ -229,11 +254,49 @@ const onEmit = async (data, socket, io, cb = null) => {
         }
     }
 }
+const genKeyUserOnline = userId => `tracking:users:online:${userId}`;
 
 
+const checkUserOnline = async userId => {
+    try {
+        const key = genKeyUserOnline(userId);
+        const device = await getRedis(key, Number)
+        console.log('checkUserOnline', userId, device)
+        if (device > 0) {
+            return true
+        }
+    } catch (e) {
+        console.error(e)
+    }
+    return false
+}
+
+const onConnected = async (socket, io) => {
+    try {
+        const user = socket.user;
+        const key = genKeyUserOnline(user.id)
+        const device = await incrRedisCluster(key, 1)
+        console.log('UserOnline', user, device)
+    } catch (e) {
+        console.error(e)
+    }
+}
+const onDisconnected = async (socket, io) => {
+    try {
+        const user = socket.user;
+        const key = genKeyUserOnline(user.id)
+        const device = await incrRedisCluster(key, -1)
+        console.log('UserOnline', user, device)
+    } catch (e) {
+        console.error(e)
+    }
+}
 module.exports = {
     onSubscribe: onSubscribe,
     unSubscribe: unSubscribe,
     onEmit: onEmit,
-    leftRoom: leftRoom
+    leftRoom: leftRoom,
+    onConnected,
+    onDisconnected,
+    checkUserOnline
 }

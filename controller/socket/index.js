@@ -4,6 +4,7 @@ const {Cluster} = require("ioredis");
 require('dotenv').config()
 const authHelper = require('../../helpers/auth')
 const onHandler = require('./on')
+const {genRoomForUser} = require("../../helpers/gen");
 /*
 * Config socket
 * */
@@ -26,7 +27,8 @@ module.exports = function initSocket(server) {
             const {payload} = user;
             if (payload.id) {
                 socket.user = payload
-                socket.join(`user_${payload.id}`)
+                const roomUser = genRoomForUser(payload.id)
+                socket.join(roomUser)
                 return next()
             }
         }
@@ -37,14 +39,16 @@ module.exports = function initSocket(server) {
 
     io.on('connection', (socket) => {
         console.log('a user connected', socket.id);
+        onHandler.onConnected(socket, io)
         socket.on('subscribe', (args, cb) => onHandler.onSubscribe(args, socket, io, cb))
         socket.on('unsubscribe', (args, cb) => onHandler.unSubscribe(args, socket, io, cb))
         socket.on('disconnecting', (reason) => {
             // ...
-            console.error('disconnect', reason,Object.keys(socket.rooms), socket.rooms)
+            console.error('disconnect', reason, Object.keys(socket.rooms), socket.rooms)
+            onHandler.onDisconnected(socket, io)
             try {
-                socket.rooms.forEach(room=>onHandler.leftRoom(socket, room, io))
-            }catch (e) {
+                socket.rooms.forEach(room => onHandler.leftRoom(socket, room, io))
+            } catch (e) {
                 console.error(e)
             }
         });

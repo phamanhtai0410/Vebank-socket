@@ -1,6 +1,6 @@
 const blackList = require('../constants/blackList')
 const bluebird = require('bluebird')
-
+const {ObjectID} = require("mongodb")
 function isJson(item) {
     item = typeof item !== "string"
         ? JSON.stringify(item)
@@ -37,7 +37,8 @@ const isValidMessage = payload => new Promise(async resolve => {
     }
 
 })
-
+const isOID = _id => ObjectID.isValid(_id)
 module.exports = {
-    isValidMessage: isValidMessage
+    isValidMessage: isValidMessage,
+    isOID
 }
