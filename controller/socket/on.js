@@ -9,14 +9,14 @@ const {
     lPushArray
 } = require("../../extentions/redisCluster");
 const {getTimeCurrentUTC} = require("../../helpers/datetime");
-
-const getKeyCountClientOfRoom = room => `counters:rooms:${room}`
-const getKeyRecordUser = room => `recorders:rooms:${room}`
-const getKeyLogRoom = room => `logs:rooms:${room}`
-
-const logRoom = async (room, event, payload) => {
+const MAP_KEY = '_#rinzRom#_'
+const getKeyCountClientOfRoom = roomKey => `counters:rooms:${roomKey}`
+const getKeyRecordUser = roomKey => `recorders:rooms:${roomKey}`
+const getKeyLogRoom = roomKey => `logs:rooms:${roomKey}`
+const genRoomKey = (author_id, room) => `${author_id}${MAP_KEY}${room}`
+const logRoom = async (roomKey, event, payload) => {
     try {
-        const key = getKeyLogRoom(room)
+        const key = getKeyLogRoom(roomKey)
         lPushArray(key, {
             'event': event,
             'payload': payload,
@@ -27,16 +27,18 @@ const logRoom = async (room, event, payload) => {
     }
 }
 
-const recordUser = async (room, user) => {
+const recordUser = async (roomKey, user) => {
     try {
-        const key = getKeyRecordUser(room)
+        const key = getKeyRecordUser(roomKey)
         const has = await hSetRedis(key, user.id, {
             ...user,
             'devices': 1,
             'created_time': getTimeCurrentUTC()
         })
+        console.log('recordUser has', has)
         if (has === 0) {
-            hUpdateINCRBYFLOAT(key, user.id, 'devices', 1)
+            const v = await hUpdateINCRBYFLOAT(key, user.id, 'devices', 1)
+            return v
         }
         return has;
     } catch (e) {
@@ -44,15 +46,19 @@ const recordUser = async (room, user) => {
     }
 }
 
-const joinRoom = async (socket, room) => {
+const joinRoom = async (socket, room, author_id) => {
     try {
-        const key = getKeyCountClientOfRoom(room)
-        socket.join(room)
-        const has = await recordUser(room, socket.user)
+        const roomKey = genRoomKey(author_id, room)
+        const key = getKeyCountClientOfRoom(roomKey)
+        console.log('roomKey', roomKey)
+        socket.join(roomKey)
+        const has = await recordUser(roomKey, socket.user)
         let countClients = 0
-        if(has===1) {
+        console.log('recordUser ah', has)
+        if (has === 1) {
             countClients = await incrRedisCluster(key, 1)
-            socket.to(room).emit('joined', {
+            console.log('send joined to room', roomKey, countClients)
+            socket.to(roomKey).emit('joined', {
                 payload: {
                     total_views: countClients,
                     member: socket.user,
@@ -61,9 +67,9 @@ const joinRoom = async (socket, room) => {
                 user_id: -777
             })
         } else {
-            countClients = await getRedis(key)
+            countClients = Number(await getRedis(key))
         }
-        logRoom(room, 'joined', {
+        logRoom(roomKey, 'joined', {
             'total_views': countClients,
             'user': socket.user
         })
@@ -71,22 +77,27 @@ const joinRoom = async (socket, room) => {
     } catch (e) {
         console.error(e)
     }
-    return  0
+    return 0
 }
-const leftRoom = async (socket, room, io) => {
+const leftRoom = async (socket, roomKey, io) => {
     try {
-        const key = getKeyCountClientOfRoom(room)
+        let room = roomKey
+        const key = getKeyCountClientOfRoom(roomKey)
         if (socket) {
-            socket.leave(room)
+            socket.leave(roomKey)
         }
+        if (room.indexOf(MAP_KEY) !== -1) {
+            room = roomKey.split(MAP_KEY)[1]
+        }
+        console.log('left room', room, key)
         const user = socket.user
-        const _keyRecorder = getKeyRecordUser(room)
+        const _keyRecorder = getKeyRecordUser(roomKey)
         const currentRow = await hGetRedis(_keyRecorder, user.id)
         if (currentRow) {
             if (!currentRow?.devices || currentRow.devices === 1) {
                 const countClients = await incrRedisCluster(key, -1)
                 if (io && countClients > 0) {
-                    io.to(room).emit('left', {
+                    io.to(roomKey).emit('left', {
                         payload: {
                             total_views: countClients,
                             member: user,
@@ -95,7 +106,7 @@ const leftRoom = async (socket, room, io) => {
                         user_id: -777
                     })
                 }
-                logRoom(room, 'left', {
+                logRoom(roomKey, 'left', {
                     'total_views': countClients,
                     'user': user
                 })
@@ -106,15 +117,26 @@ const leftRoom = async (socket, room, io) => {
     } catch (e) {
         console.error(e)
     }
-    return  0
+    return 0
 }
 const onSubscribe = async (data, socket, io, cb = null) => {
     try {
-        const {room} = data;
-        if (room) {
-            console.log('isOID', isOID(room))
-            if (isOID(room)) {
-                const countClients = await joinRoom(socket, room)
+        const {room, author_id} = data;
+        console.log(data)
+        if (room && isOID(room)) {
+            if (!author_id) {
+                console.log('cb', cb)
+                if (cb) {
+                    cb({
+                        'error_code': 'ERROR_INVALID_ROOM',
+                        'status': 0,
+                        'data': {},
+                        'msg': 'author_id is invalid'
+                    })
+                }
+            } else {
+                const countClients = await joinRoom(socket, room, author_id)
+                console.log('countClients', countClients)
                 if (cb) {
                     cb({
                         'error_code': '',
@@ -126,17 +148,16 @@ const onSubscribe = async (data, socket, io, cb = null) => {
                         'msg': 'success'
                     })
                 }
-            } else {
-                if (cb) {
-                    cb({
-                        'error_code': 'ERROR_INVALID_ROOM',
-                        'status': 0,
-                        'data': {},
-                        'msg': 'room is invalid'
-                    })
-                }
             }
-
+        } else {
+            if (cb) {
+                cb({
+                    'error_code': 'ERROR_INVALID_ROOM',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'room is invalid'
+                })
+            }
         }
 
     } catch (e) {
@@ -153,10 +174,14 @@ const onSubscribe = async (data, socket, io, cb = null) => {
 }
 const unSubscribe = (data, socket, io, cb = null) => {
     try {
-        const {room} = data;
+        const {room, author_id} = data;
         if (room) {
+            let roomKey = room
+            if (author_id) {
+                roomKey = genRoomKey()
+            }
             if (isOID(room)) {
-                leftRoom(socket, room)
+                leftRoom(socket, roomKey)
                 if (cb) {
                     cb({
                         'error_code': '',
@@ -298,5 +323,6 @@ module.exports = {
     leftRoom: leftRoom,
     onConnected,
     onDisconnected,
-    checkUserOnline
+    checkUserOnline,
+    genRoomKey
 }

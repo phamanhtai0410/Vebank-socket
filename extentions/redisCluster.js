@@ -45,6 +45,7 @@ const hSetRedis = async (key, field, item = {}) => {
     try {
         const payload = JSON.stringify(item)
         const has = await redisCluster.hexists(key, field)
+        console.log('hexists', key, field)
         if (has === 0) {
             const response = await redisCluster.hset(key, field, payload)
             return Number(response)
@@ -92,8 +93,11 @@ const hUpdateINCRBYFLOAT = async (key, field, fieldKey, number) => {
 
         const _payload = JSON.stringify(update)
         await  redisCluster.hset(key, field, _payload)
+
+        return update[fieldKey]
     } catch (e) {
         console.error(e)
+        return false
     }
 }
 module.exports = {

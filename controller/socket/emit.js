@@ -1,7 +1,7 @@
 const express = require('express');
 const {isOID} = require("../../helpers/valid");
 const bluebird = require("bluebird");
-const {checkUserOnline} = require("./on");
+const {checkUserOnline, genRoomKey} = require("./on");
 const {genRoomForUser} = require("../../helpers/gen");
 const {getTimeCurrentUTC} = require("../../helpers/datetime");
 
@@ -20,9 +20,10 @@ module.exports = function (io) {
                 payload,
                 owner = -777,
                 type = "public",
-                users = []
+                users = [],
+                author_id
             } = body;
-            if(!isOID(room)){
+            if (!isOID(room)) {
                 return res.status(200).send({
                     'error_code': 'ERROR_INVALID',
                     'status': 0,
@@ -32,8 +33,19 @@ module.exports = function (io) {
                     'version': 'v1'
                 })
             }
+
             if (type === 'public') {
-                io.to(room).emit(event, {
+                if (!author_id) {
+                    return res.status(200).send({
+                        'error_code': 'ERROR_INVALID',
+                        'status': 0,
+                        'data': {},
+                        'msg': 'author_id is invalid',
+                        'time': getTimeCurrentUTC(),
+                        'version': 'v1'
+                    })
+                }
+                io.to(genRoomKey(author_id, room)).emit(event, {
                     'payload': payload,
                     'room': room,
                     'owner': owner,

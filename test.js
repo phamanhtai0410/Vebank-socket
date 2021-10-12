@@ -1,10 +1,13 @@
 const io = require("socket.io-client");
-const host = 'http://localhost:3000'
+// const host = 'https://socket-staging.rinznetwork.com'
+const host = 'http://127.0.0.1:3000'
+const token_1 = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJwYXlsb2FkIjp7ImlkIjo2NiwidXNlcl9uYW1lIjpudWxsLCJ1c2VyX2F2YXRhciI6Imh0dHBzOi8vc3RhdGljLnRoZWN1YXR1aS5uZXQvdGhlY3VhdHVpL2ltYWdlcy8yMDIxLzA4LzIyLzE2Mjk1ODAzOTIuNjY4OTEzX1JpblotMTAyNC5wbmciLCJ1c2VyX2Z1bGxfbmFtZSI6IlZcdTAwZjUgTWluaCBUclx1MWVhMW0ifSwiaWF0IjoxNjM0MDIzMzg4LCJleHAiOjE2NjU1NTkzODh9.bstZB7ySAbOyfYfr7-rAuLsgJYi0EDe5SFz5HvkCFAEWnAp-zPo7AtZTV8Go929wgy5wbarKg6_WZzSHs4yJxR9A0WpEYTOZkCAHhNXNJLTRi6CLKhVglqgTXyDwMKnTkGBdYoHYyWGfHcz6N-G0UlinlfhszK3rTD1YkBinXf8NBLTx7Wz1iPvaJwdcRh5jwGcNUhzX4F1vUaH6spMqBdYx6uaJE7scDIxZwQ5NlicQVgKDpolRyLg_sOT0TY4gaUiwYMUdXRYGwpWq52V8EPdp1K8kIcyp_qrb4l2zm2gPFEry__EWwpCcjL6uaiB1b8gZYftue-1V1UgQngp7tg"
+const token_2 = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJwYXlsb2FkIjp7ImlkIjoxODEsInVzZXJfbmFtZSI6bnVsbCwidXNlcl9hdmF0YXIiOiJodHRwczovL3N0YXRpYy50aGVjdWF0dWkubmV0L3RoZWN1YXR1aS9pbWFnZXMvMjAyMS8wNy8yNy8xNjI3MzY4MDk0Ljk2NTAyXzM4MDk2OTUuanBnIiwidXNlcl9mdWxsX25hbWUiOiJJZ25vcmFudCBwZXJzb24gW1N0dXBpZF0ifSwiaWF0IjoxNjM0MDI3MDM1LCJleHAiOjE2NjU1NjMwMzV9.Yu-i3bod4WbiDn-XhxH_e4o9tDDp_orbYFq5T5CVzHTitUjEWo9KAWBQVBSScE1m258PAklJ9YCTIF8cHyRQagmkITKo35KxQK2G4wuFVXO1KwYd0m2Dg1jh2nf3RdvnxJJkabPmDa4lUnWUNrjb4AzFT45ETLDiobj-qZ2kDWN5cbNVIeQ1R8IPM4_F5ECGQc_yJ3x_dCXLWnDJcJw-76s08xavSVGwPcJr7U2I2GVY2QcJGGP9ag7kRYyLUk-zWcahyJAf0PcO_I4Kk5Xkg6gx9LM-Mb6M3vCvZ7FWu9yRP-ZqtgJ_cUJZAqpwqQFPqgkXZnB2-JN-KXs_a0Oaxw"
 let socket = io(host, {
     forceNew: true,
     transports: ["websocket"],
     auth: {
-        token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJwYXlsb2FkIjp7ImlkIjoyNjY0LCJlbWFpbCI6bnVsbCwidXNlcm5hbWUiOm51bGwsInVzZXJfYXZhdGFyIjpudWxsLCJmdWxsX25hbWUiOm51bGx9LCJpYXQiOjE2Mjg1MDIwMDMsImV4cCI6MTY2MDAzODAwM30.IW54mLOMRvBwWnB61b6J2wVb8zgG_C7lPaQyfFEqtW-_rfCCXz--O_eXqks74Oh6RbwpHNqWoFT8mSPKOMctzPpz_QXx_T0FPw4AYV6EpDVIOjilHrl2WfR5DNaDwu4MuXBePXQJEq0NKmZU5t9tLPf0x8YKi3v6FE_TFCYtubGCtxlpF94dVSz1uacXvLG0LSGHYHk75RP_Ub9jUnZScDQsfBjgO1CIgpyhE8RQottKcaNduzsE1xmSuw0uevDKqp56tADKrVrlKyUUxta8ogCQfl_nZdtCjFkDy6ldM2s6RryiEtEioBM-ttQTLsgXPYYN1qkC2ae6M8wHq0Ns8w"
+        token: token_2
     }
 });
 
@@ -12,7 +15,8 @@ let socket = io(host, {
 socket.on("connect", () => {
     console.log('connected', socket.id, host);
     socket.emit("subscribe", {
-        'room': '607ceddd33536e61833b5c43'
+        'room': '6157739dec1491a89f942b61',
+        'author_id': 66
     }, (response) => {
         console.log(response); // ok
     })

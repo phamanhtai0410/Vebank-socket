@@ -28,6 +28,7 @@ module.exports = function initSocket(server) {
             if (payload.id) {
                 socket.user = payload
                 const roomUser = genRoomForUser(payload.id)
+                console.log('roomUser', roomUser)
                 socket.join(roomUser)
                 return next()
             }
