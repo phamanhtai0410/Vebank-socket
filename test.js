@@ -7,7 +7,7 @@ let socket = io(host, {
     forceNew: true,
     transports: ["websocket"],
     auth: {
-        token: token_2
+        token: token_1
     }
 });
 
@@ -19,11 +19,24 @@ socket.on("connect", () => {
         'author_id': 66
     }, (response) => {
         console.log(response); // ok
+        socket.emit("send_room", {
+            'room': '6157739dec1491a89f942b61',
+            'author_id': 66,
+            'type': 'activity',
+            "meta": {
+                "action": "heard"
+            }
+        }, (response) => {
+            console.log(response); // ok
+        })
     })
 
 });
 socket.on("joined", (data) => {
     console.log('joined', data);
+});
+socket.on("in_room", (data) => {
+    console.log('in_room', data);
 });
 socket.on("left", (data) => {
     console.log('left', data);

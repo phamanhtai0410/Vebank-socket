@@ -40,5 +40,6 @@ const isValidMessage = payload => new Promise(async resolve => {
 const isOID = _id => ObjectID.isValid(_id)
 module.exports = {
     isValidMessage: isValidMessage,
-    isOID
+    isOID,
+    isJson
 }

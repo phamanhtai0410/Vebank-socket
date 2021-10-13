@@ -1,4 +1,4 @@
-const {isValidMessage, isOID} = require("../../helpers/valid");
+const {isValidMessage, isOID, isJson} = require("../../helpers/valid");
 const {inRoom} = require("../../helpers/rules");
 const {
     incrRedisCluster,
@@ -301,7 +301,7 @@ const onConnected = async (socket, io) => {
         const user = socket.user;
         const key = genKeyUserOnline(user.id)
         const device = await incrRedisCluster(key, 1)
-        console.log('UserOnline', user, device)
+        console.log('onConnected UserOnline', user, device, key)
     } catch (e) {
         console.error(e)
     }
@@ -311,9 +311,93 @@ const onDisconnected = async (socket, io) => {
         const user = socket.user;
         const key = genKeyUserOnline(user.id)
         const device = await incrRedisCluster(key, -1)
-        console.log('UserOnline', user, device)
+        console.log('onDisconnected UserOnline', user, device, key)
     } catch (e) {
         console.error(e)
+    }
+}
+const onSendRoom = async (data, socket, io, cb = null) => {
+    try {
+        const {room, author_id, meta, type} = data
+        if (!room || !isOID(room)) {
+            if (cb) {
+                cb({
+                    'error_code': 'ERROR_INVALID',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'room is required and must be a objectid'
+                })
+            }
+            return
+        }
+        if (!author_id || typeof author_id !== "number") {
+            if (cb) {
+                cb({
+                    'error_code': 'ERROR_INVALID',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'author_id is required and must be a number'
+                })
+            }
+            return
+        }
+        if (!meta || !isJson(meta)) {
+            if (cb) {
+                cb({
+                    'error_code': 'ERROR_INVALID',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'meta is required and must be a object json'
+                })
+            }
+            return
+        }
+
+        if (!type || typeof type !== "string") {
+            if (cb) {
+                cb({
+                    'error_code': 'ERROR_INVALID',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'type is required and must be a string'
+                })
+            }
+            return
+        }
+
+        const roomKey = genRoomKey(author_id, room)
+        const user = socket.user
+        const userInRoom = await inRoom(socket, roomKey)
+        if (!userInRoom) {
+            if (cb) {
+                cb({
+                    'error_code': 'ERROR_USER_NOT_IN_ROOM',
+                    'status': 0,
+                    'data': {},
+                    'msg': 'user not in room'
+                })
+            }
+        } else {
+            io.to(roomKey).emit('in_room', {
+                payload: {
+                    user: user,
+                    room: room,
+                    meta: meta,
+                    type: type
+                },
+                user_id: -777
+            })
+        }
+    } catch (e) {
+        console.error(e)
+        if (cb) {
+            cb({
+                'error_code': 'ERROR_SERVER',
+                'status': 0,
+                'data': {},
+                'msg': 'unknown error'
+            })
+        }
     }
 }
 module.exports = {
@@ -324,5 +408,6 @@ module.exports = {
     onConnected,
     onDisconnected,
     checkUserOnline,
-    genRoomKey
+    genRoomKey,
+    onSendRoom
 }
