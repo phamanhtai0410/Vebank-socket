@@ -41,6 +41,8 @@ module.exports = function initSocket(server) {
     io.on('connection', (socket) => {
         console.log('a user connected', socket.id);
         onHandler.onConnected(socket, io)
+
+        socket.on('send_room', (args, cb) => onHandler.onSendRoom(args, socket, io, cb))
         socket.on('subscribe', (args, cb) => onHandler.onSubscribe(args, socket, io, cb))
         socket.on('unsubscribe', (args, cb) => onHandler.unSubscribe(args, socket, io, cb))
         socket.on('disconnecting', (reason) => {
